@@ -1,7 +1,7 @@
 """Application configuration."""
 
 # Request defaults
-REQUEST_TIMEOUT = 8
+REQUEST_TIMEOUT = 6
 MAX_WORKERS = 12
 
 # Scraper settings
