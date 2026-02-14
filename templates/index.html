@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenCoco - Torrent Scraper</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>OpenCoco</h1>
+            <p class="subtitle">Torrent Search Engine &mdash; powered by CocoScrapers</p>
+        </header>
+
+        <div class="search-box">
+            <form id="search-form">
+                <div class="search-row">
+                    <input type="text" id="search-input" placeholder="Search for torrents..." autocomplete="off" autofocus>
+                    <button type="submit" id="search-btn">Search</button>
+                </div>
+                <div class="provider-toggle">
+                    <button type="button" id="toggle-providers" class="link-btn">Select providers</button>
+                    <div id="provider-list" class="provider-list hidden"></div>
+                </div>
+            </form>
+        </div>
+
+        <div id="status" class="status hidden"></div>
+
+        <div id="results-info" class="results-info hidden">
+            <span id="results-count"></span>
+            <div class="sort-controls">
+                Sort by:
+                <button class="sort-btn active" data-sort="seeders">Seeders</button>
+                <button class="sort-btn" data-sort="size">Size</button>
+                <button class="sort-btn" data-sort="name">Name</button>
+            </div>
+        </div>
+
+        <div id="results" class="results"></div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
