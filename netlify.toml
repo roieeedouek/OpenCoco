@@ -1,14 +1,13 @@
 [build]
   publish = "public"
   functions = "netlify/functions"
-  command = "npm install"
+  command = "npm install --production"
 
 [build.environment]
   NODE_VERSION = "18"
 
 [functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["cheerio"]
+  node_bundler = "nft"
 
 [[redirects]]
   from = "/api/search"

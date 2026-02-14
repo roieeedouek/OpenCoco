@@ -26,7 +26,7 @@ function parseSize(sizeStr) {
   const m = sizeStr.match(/([\d.]+)\s*(TB|TiB|GB|GiB|MB|MiB|KB|KiB)/i);
   if (!m) return 0;
   const val = parseFloat(m[1]);
-  const unit = m[2].toUpperCase().replace(/IB$/, '').replace(/I$/, '');
+  const unit = m[2].toUpperCase().replace(/IB$/, '').replace(/B$/, '');
   if (unit === 'T') return val * 1024;
   if (unit === 'G') return val;
   if (unit === 'M') return +(val / 1024).toFixed(2);
