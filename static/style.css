@@ -5,42 +5,58 @@
 }
 
 :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #242836;
-    --border: #2e3348;
-    --text: #e1e4ed;
+    --bg: #0b0d13;
+    --surface: #161922;
+    --surface2: #1f2330;
+    --surface3: #262b3a;
+    --border: #2a2f40;
+    --border-soft: #20242f;
+    --text: #e7eaf3;
     --text-dim: #8b8fa3;
+    --text-mute: #5f6478;
     --accent: #6c5ce7;
     --accent-hover: #7f71ef;
+    --accent-soft: rgba(108, 92, 231, 0.14);
     --green: #00b894;
     --orange: #fdcb6e;
     --red: #e17055;
     --magnet: #0984e3;
+    --magnet-soft: rgba(9, 132, 227, 0.12);
+    --radius: 10px;
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
     background: var(--bg);
+    background-image:
+        radial-gradient(900px 500px at 50% -10%, rgba(108, 92, 231, 0.12), transparent 70%);
     color: var(--text);
     line-height: 1.6;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
 .container {
     max-width: 960px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 40px 20px 80px;
 }
 
+/* Header */
 header {
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 28px;
 }
 
 header h1 {
     font-size: 2.4rem;
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     background: linear-gradient(135deg, var(--accent), var(--magnet));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -50,12 +66,18 @@ header h1 {
 .subtitle {
     color: var(--text-dim);
     font-size: 0.95rem;
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 /* Search */
 .search-box {
-    margin-bottom: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin: -8px -20px 20px;
+    padding: 12px 20px 14px;
+    background: linear-gradient(var(--bg) 70%, rgba(11, 13, 19, 0.85));
+    backdrop-filter: blur(8px);
 }
 
 .search-row {
@@ -65,34 +87,39 @@ header h1 {
 
 #search-input {
     flex: 1;
-    padding: 12px 16px;
+    padding: 13px 16px;
     font-size: 1rem;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius);
     color: var(--text);
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 #search-input:focus {
     border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 #search-btn {
-    padding: 12px 28px;
+    padding: 13px 28px;
     font-size: 1rem;
     font-weight: 600;
     background: var(--accent);
     color: #fff;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius);
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.1s;
 }
 
 #search-btn:hover {
     background: var(--accent-hover);
+}
+
+#search-btn:active {
+    transform: scale(0.98);
 }
 
 #search-btn:disabled {
@@ -102,7 +129,7 @@ header h1 {
 
 /* Provider toggle */
 .provider-toggle {
-    margin-top: 8px;
+    margin-top: 10px;
     text-align: left;
 }
 
@@ -126,7 +153,7 @@ header h1 {
     margin-top: 8px;
     padding: 12px;
     background: var(--surface);
-    border-radius: 8px;
+    border-radius: var(--radius);
     border: 1px solid var(--border);
 }
 
@@ -142,7 +169,7 @@ header h1 {
     color: var(--text-dim);
     cursor: pointer;
     padding: 4px 10px;
-    border-radius: 4px;
+    border-radius: 6px;
     transition: background 0.15s;
 }
 
@@ -157,7 +184,7 @@ header h1 {
 /* Status */
 .status {
     text-align: center;
-    padding: 16px;
+    padding: 24px 16px;
     color: var(--text-dim);
     font-size: 0.95rem;
 }
@@ -191,11 +218,11 @@ header h1 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
-    margin-bottom: 8px;
+    padding: 10px 2px;
+    margin-bottom: 10px;
     font-size: 0.9rem;
     color: var(--text-dim);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-soft);
 }
 
 .results-info.hidden {
@@ -206,14 +233,15 @@ header h1 {
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-wrap: wrap;
 }
 
 .sort-btn {
     background: var(--surface);
     color: var(--text-dim);
     border: 1px solid var(--border);
-    padding: 4px 10px;
-    border-radius: 4px;
+    padding: 5px 12px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 0.8rem;
     transition: all 0.15s;
@@ -230,54 +258,70 @@ header h1 {
     border-color: var(--accent);
 }
 
-/* Result cards */
+/* Result cards — stable list */
 .results {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
+    /* Reserve space so the page doesn't jump as results stream in */
+    min-height: 120px;
 }
 
 .result-card {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     padding: 14px 16px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    transition: border-color 0.15s;
+    border-radius: var(--radius);
+    transition: border-color 0.15s, background 0.15s;
+    animation: cardIn 0.18s ease;
+}
+
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .result-card:hover {
     border-color: var(--accent);
+    background: var(--surface2);
 }
 
+/* Name: clamp to 2 lines so every card has the same height */
 .result-name {
     font-size: 0.92rem;
-    font-weight: 500;
+    font-weight: 600;
+    line-height: 1.4;
     word-break: break-word;
-    grid-column: 1 / -1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.6em;
 }
 
+/* Meta: single stable row */
 .result-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
     align-items: center;
+    gap: 10px 14px;
     font-size: 0.8rem;
     color: var(--text-dim);
-    grid-column: 1 / -1;
 }
 
 .meta-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 4px;
+    white-space: nowrap;
 }
 
 .seeders {
     color: var(--green);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .seeders.low {
@@ -289,22 +333,31 @@ header h1 {
 }
 
 .provider-badge {
-    background: var(--surface2);
+    background: var(--surface3);
     padding: 2px 8px;
     border-radius: 4px;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-dim);
+    white-space: nowrap;
+}
+
+/* Actions: stable single row, right-aligned */
+.result-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 2px;
 }
 
 .magnet-btn {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 5px 14px;
+    padding: 6px 14px;
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--magnet);
-    background: rgba(9, 132, 227, 0.1);
+    background: var(--magnet-soft);
     border: 1px solid rgba(9, 132, 227, 0.3);
     border-radius: 6px;
     text-decoration: none;
@@ -322,10 +375,10 @@ header h1 {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 5px 10px;
+    padding: 6px 12px;
     font-size: 0.8rem;
     color: var(--text-dim);
-    background: var(--surface2);
+    background: var(--surface3);
     border: 1px solid var(--border);
     border-radius: 6px;
     cursor: pointer;
@@ -346,11 +399,16 @@ header h1 {
 /* Responsive */
 @media (max-width: 600px) {
     .container {
-        padding: 20px 12px;
+        padding: 24px 14px 80px;
     }
 
     header h1 {
-        font-size: 1.8rem;
+        font-size: 1.9rem;
+    }
+
+    .search-box {
+        margin: -6px -14px 18px;
+        padding: 10px 14px 12px;
     }
 
     .search-row {
@@ -365,5 +423,9 @@ header h1 {
         flex-direction: column;
         gap: 8px;
         align-items: flex-start;
+    }
+
+    .result-actions {
+        justify-content: flex-start;
     }
 }

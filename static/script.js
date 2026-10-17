@@ -116,7 +116,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (currentSort === 'name') {
             sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         }
+        // Preserve scroll position so the list stays stable while results
+        // stream in and the DOM is re-rendered on each chunk.
+        const scrollY = window.scrollY;
         renderResults(sorted);
+        window.scrollTo(0, scrollY);
     }
 
     function renderResults(results) {
@@ -129,6 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="meta-item"><strong>Size:</strong> ${escapeHtml(r.size || 'N/A')}</span>
                         <span class="meta-item"><strong>Seeds:</strong> <span class="seeders ${seedClass}">${r.seeders || 0}</span></span>
                         <span class="provider-badge">${escapeHtml(r.provider)}</span>
+                    </div>
+                    <div class="result-actions">
                         <a class="magnet-btn" href="${escapeHtml(r.magnet)}" title="Open magnet link">&#x1F9F2; Magnet</a>
                         <button class="copy-btn" data-idx="${i}" title="Copy magnet link to clipboard">Copy</button>
                     </div>
