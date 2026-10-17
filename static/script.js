@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentResults = [];
     let currentSort = 'seeders';
+    let currentEventSource = null;
 
     // Load provider list
     fetch('/api/providers')
@@ -36,46 +37,64 @@ document.addEventListener('DOMContentLoaded', () => {
         const checked = providerList.querySelectorAll('input[type="checkbox"]:checked');
         const providers = Array.from(checked).map(c => c.value).join(',');
 
+        // Close any in-flight search stream
+        if (currentEventSource) currentEventSource.close();
+
         btn.disabled = true;
         resultsDiv.innerHTML = '';
         resultsInfo.classList.add('hidden');
+        currentResults = [];
         status.classList.remove('hidden', 'error');
         status.innerHTML = '<span class="spinner"></span> Searching across providers...';
 
         const params = new URLSearchParams({ q: query });
         if (providers) params.set('providers', providers);
 
-        fetch(`/api/search?${params}`)
-            .then(r => r.json())
-            .then(data => {
-                btn.disabled = false;
+        const es = new EventSource(`/api/search?${params}`);
+        currentEventSource = es;
+        let errorCount = 0;
 
-                if (data.error) {
-                    status.classList.add('error');
-                    status.textContent = data.error;
-                    return;
+        es.addEventListener('message', (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'results') {
+                // Render progressively as each provider finishes
+                currentResults = currentResults.concat(data.results || []);
+                if (currentResults.length > 0) {
+                    status.classList.add('hidden');
+                    resultsCount.textContent = `${currentResults.length} results so far...`;
+                    resultsInfo.classList.remove('hidden');
+                    sortAndRender();
                 }
-
-                currentResults = data.results || [];
+            } else if (data.type === 'done') {
+                es.close();
+                currentEventSource = null;
+                btn.disabled = false;
+                errorCount = (data.errors || []).length;
 
                 if (currentResults.length === 0) {
                     status.textContent = 'No results found.';
+                    resultsInfo.classList.add('hidden');
                     return;
                 }
 
                 status.classList.add('hidden');
-                const errorCount = (data.errors || []).length;
                 const errorText = errorCount > 0 ? ` (${errorCount} provider${errorCount > 1 ? 's' : ''} failed)` : '';
                 resultsCount.textContent = `${data.total} results${errorText}`;
                 resultsInfo.classList.remove('hidden');
-
                 sortAndRender();
-            })
-            .catch(() => {
-                btn.disabled = false;
+            }
+        });
+
+        es.onerror = () => {
+            es.close();
+            currentEventSource = null;
+            btn.disabled = false;
+            if (currentResults.length === 0) {
                 status.classList.add('error');
                 status.textContent = 'Request failed. Is the server running?';
-            });
+            }
+        };
     });
 
     // Sorting
