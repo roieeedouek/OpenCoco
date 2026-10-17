@@ -15,7 +15,7 @@ class Source(BaseScraper):
         search_url = f'{self.base_url}/search/{quote(query)}/1/'
         soup = client.get_soup(search_url)
         if not soup:
-            return []
+            raise RuntimeError('Blocked by Cloudflare (403)')
         links = []
         for a_tag in soup.select('td.coll-1.name a[href*="/torrent/"]'):
             href = a_tag.get('href', '')

@@ -13,7 +13,7 @@ class Source(BaseScraper):
         url = f'{self.base_url}/torrents.php?search={quote(query)}&sort=seeders&order=desc'
         soup = client.get_soup(url)
         if not soup:
-            return []
+            raise RuntimeError('Site shut down (all domains unreachable)')
         results = []
         for row in soup.select('div.tgxtablerow'):
             # Name

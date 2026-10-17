@@ -1,7 +1,7 @@
 """KickAss Torrents scraper - HTML scraping with domain fallback."""
 
 import re
-from urllib.parse import quote
+from urllib.parse import quote, unquote, parse_qs, urlparse
 from scrapers.base import BaseScraper
 from scrapers import client, utils
 
@@ -31,34 +31,38 @@ class Source(BaseScraper):
         url = f'{base}/usearch/{quote(query)}/?field=size&sorder=desc'
         soup = client.get_soup(url)
         if not soup:
-            return []
-        results = []
+            raise RuntimeError('All KickAss domains are down or broken')
         table = soup.select_one('table.data')
         if not table:
-            return []
+            raise RuntimeError('All KickAss domains are down or broken')
+        results = []
         for row in table.select('tr')[1:]:
             cols = row.select('td')
             if len(cols) < 5:
                 continue
-            # Name
-            name_tag = cols[0].select_one('a.cellMainLink')
-            name = utils.clean_name(name_tag.get_text()) if name_tag else ''
+            # Name from the torrent detail link (href starts with /t).
+            # Several links share that href prefix; pick the one with text.
+            name = ''
+            for a in cols[0].select('a[href^="/t"]'):
+                txt = a.get_text(strip=True)
+                if txt:
+                    name = utils.clean_name(txt)
+                    break
             if not name:
                 continue
-            # Magnet
-            magnet_tag = cols[0].select_one('a[href^="magnet:"]')
-            if not magnet_tag:
-                # Try to find hash from the torrent link
-                link = name_tag.get('href', '')
-                detail_page = client.get_soup(base + link)
-                if detail_page:
-                    magnet_tag = detail_page.select_one('a[href^="magnet:"]')
-                if not magnet_tag:
-                    continue
-            magnet = magnet_tag['href']
-            # Size
+            # Magnet is wrapped in a redirect URL: mylink.cloud/?url=<encoded magnet>
+            magnet = ''
+            magnet_tag = cols[0].select_one('a[href*="magnet"]')
+            if magnet_tag:
+                href = magnet_tag.get('href', '')
+                if 'url=' in href:
+                    magnet = unquote(parse_qs(urlparse(href).query).get('url', [''])[0])
+                elif href.startswith('magnet:'):
+                    magnet = href
+            if not magnet:
+                continue
+            # Size from second column, seeders from fourth
             size_text = cols[1].get_text(strip=True) if len(cols) > 1 else ''
-            # Seeders
             seeders = utils.parse_seeders(cols[3].get_text()) if len(cols) > 3 else 0
             results.append({
                 'name': name,
