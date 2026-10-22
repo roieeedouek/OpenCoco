@@ -1,0 +1,13 @@
+.git
+.gitignore
+__pycache__/
+*.pyc
+.env
+node_modules/
+.netlify/
+public/
+netlify/
+netlify.toml
+package*.json
+test_*.js
+Dockerfile
