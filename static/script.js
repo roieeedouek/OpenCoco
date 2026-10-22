@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentResults = [];
     let currentSort = 'seeders';
+    let currentEventSource = null;
 
     // Load provider list
     fetch('/api/providers')
@@ -36,46 +37,64 @@ document.addEventListener('DOMContentLoaded', () => {
         const checked = providerList.querySelectorAll('input[type="checkbox"]:checked');
         const providers = Array.from(checked).map(c => c.value).join(',');
 
+        // Close any in-flight search stream
+        if (currentEventSource) currentEventSource.close();
+
         btn.disabled = true;
         resultsDiv.innerHTML = '';
         resultsInfo.classList.add('hidden');
+        currentResults = [];
         status.classList.remove('hidden', 'error');
         status.innerHTML = '<span class="spinner"></span> Searching across providers...';
 
         const params = new URLSearchParams({ q: query });
         if (providers) params.set('providers', providers);
 
-        fetch(`/api/search?${params}`)
-            .then(r => r.json())
-            .then(data => {
-                btn.disabled = false;
+        const es = new EventSource(`/api/search?${params}`);
+        currentEventSource = es;
+        let errorCount = 0;
 
-                if (data.error) {
-                    status.classList.add('error');
-                    status.textContent = data.error;
-                    return;
+        es.addEventListener('message', (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'results') {
+                // Render progressively as each provider finishes
+                currentResults = currentResults.concat(data.results || []);
+                if (currentResults.length > 0) {
+                    status.classList.add('hidden');
+                    resultsCount.textContent = `${currentResults.length} results so far...`;
+                    resultsInfo.classList.remove('hidden');
+                    sortAndRender();
                 }
-
-                currentResults = data.results || [];
+            } else if (data.type === 'done') {
+                es.close();
+                currentEventSource = null;
+                btn.disabled = false;
+                errorCount = (data.errors || []).length;
 
                 if (currentResults.length === 0) {
                     status.textContent = 'No results found.';
+                    resultsInfo.classList.add('hidden');
                     return;
                 }
 
                 status.classList.add('hidden');
-                const errorCount = (data.errors || []).length;
                 const errorText = errorCount > 0 ? ` (${errorCount} provider${errorCount > 1 ? 's' : ''} failed)` : '';
                 resultsCount.textContent = `${data.total} results${errorText}`;
                 resultsInfo.classList.remove('hidden');
-
                 sortAndRender();
-            })
-            .catch(() => {
-                btn.disabled = false;
+            }
+        });
+
+        es.onerror = () => {
+            es.close();
+            currentEventSource = null;
+            btn.disabled = false;
+            if (currentResults.length === 0) {
                 status.classList.add('error');
                 status.textContent = 'Request failed. Is the server running?';
-            });
+            }
+        };
     });
 
     // Sorting
@@ -97,7 +116,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (currentSort === 'name') {
             sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         }
+        // Preserve scroll position so the list stays stable while results
+        // stream in and the DOM is re-rendered on each chunk.
+        const scrollY = window.scrollY;
         renderResults(sorted);
+        window.scrollTo(0, scrollY);
     }
 
     function renderResults(results) {
@@ -110,6 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="meta-item"><strong>Size:</strong> ${escapeHtml(r.size || 'N/A')}</span>
                         <span class="meta-item"><strong>Seeds:</strong> <span class="seeders ${seedClass}">${r.seeders || 0}</span></span>
                         <span class="provider-badge">${escapeHtml(r.provider)}</span>
+                    </div>
+                    <div class="result-actions">
                         <a class="magnet-btn" href="${escapeHtml(r.magnet)}" title="Open magnet link">&#x1F9F2; Magnet</a>
                         <button class="copy-btn" data-idx="${i}" title="Copy magnet link to clipboard">Copy</button>
                     </div>

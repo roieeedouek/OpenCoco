@@ -2,12 +2,13 @@
 
 import sys
 import os
+import json
 
 # Ensure project root is on the import path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 from scrapers import get_all_scrapers
 from config import MAX_WORKERS
 
@@ -33,32 +34,33 @@ def api_search():
     if enabled_providers:
         scrapers = [s for s in scrapers if s.name.lower() in enabled_providers]
 
-    all_results = []
-    errors = []
-
     def run_scraper(scraper):
         try:
             return scraper.name, scraper.search(query), None
         except Exception as e:
             return scraper.name, [], str(e)
 
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
-        futures = {pool.submit(run_scraper, s): s for s in scrapers}
-        for future in as_completed(futures):
-            name, results, error = future.result()
-            if error:
-                errors.append({'provider': name, 'error': error})
-            all_results.extend(results)
+    def stream():
+        """Yield each provider's results as an SSE event the moment it finishes,
+        so the client renders progressively instead of waiting for the slowest scraper."""
+        total = 0
+        errors = []
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+            futures = {pool.submit(run_scraper, s): s for s in scrapers}
+            for future in as_completed(futures):
+                name, results, error = future.result()
+                if error:
+                    errors.append({'provider': name, 'error': error})
+                total += len(results)
+                yield f"data: {json.dumps({'type': 'results', 'provider': name, 'results': results})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'total': total, 'errors': errors})}\n\n"
 
-    # Sort by seeders descending
-    all_results.sort(key=lambda x: x.get('seeders', 0), reverse=True)
-
-    return jsonify({
-        'query': query,
-        'total': len(all_results),
-        'results': all_results,
-        'errors': errors,
-    })
+    headers = {
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no',
+        'Connection': 'keep-alive',
+    }
+    return Response(stream(), mimetype='text/event-stream', headers=headers)
 
 
 @app.route('/api/providers')

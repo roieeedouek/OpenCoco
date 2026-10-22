@@ -13,7 +13,7 @@ class Source(BaseScraper):
         url = f'{self.base_url}/search?q={quote(query)}&sort=size'
         soup = client.get_soup(url)
         if not soup:
-            return []
+            raise RuntimeError('Site returning 500 / Cloudflare challenge')
         results = []
         for item in soup.select('li.search-result, div.search-result, li.card.search-result'):
             name_tag = item.select_one('h5.title a, a.title')

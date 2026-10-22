@@ -7,7 +7,7 @@ from scrapers import client, utils
 
 class Source(BaseScraper):
     name = 'YTS'
-    base_url = 'https://yts.mx'
+    base_url = 'https://yts.lt'
 
     def search(self, query):
         url = f'{self.base_url}/api/v2/list_movies.json?query_term={quote(query)}&sort_by=seeds&limit=30'

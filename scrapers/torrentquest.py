@@ -14,7 +14,7 @@ class Source(BaseScraper):
         url = f'{self.base_url}/search?q={quote(query)}&sort=seeders&order=desc'
         soup = client.get_soup(url)
         if not soup:
-            return []
+            raise RuntimeError('Blocked by Cloudflare challenge')
         results = []
         for row in soup.select('table tbody tr, div.search-result'):
             magnet_tag = row.select_one('a[href^="magnet:"]')

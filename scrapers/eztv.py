@@ -1,51 +1,54 @@
-"""EZTV scraper - HTML scraping, primarily for TV shows."""
+"""EZTV scraper - JSON API, primarily for TV shows.
 
-import re
-from urllib.parse import quote
+The EZTV HTML search page is behind a Cloudflare challenge, so we use the
+public API (which is not challenged) and filter recent releases by title.
+This covers recently listed torrents, not the full archive.
+"""
+
 from scrapers.base import BaseScraper
 from scrapers import client, utils
+from config import MAX_RESULTS_PER_PROVIDER
 
 
 class Source(BaseScraper):
     name = 'EZTV'
-    base_url = 'https://eztvx.to'
+    base_url = 'https://eztv.re'
 
     def search(self, query):
-        search_query = query.replace(' ', '-')
-        url = f'{self.base_url}/search/{quote(search_query)}'
-        soup = client.get_soup(url)
-        if not soup:
-            return []
+        q = query.lower()
         results = []
-        table = soup.select_one('table.forum_header_border')
-        if not table:
-            return []
-        for row in table.select('tr.forum_header_border'):
-            cols = row.select('td')
-            if len(cols) < 5:
-                continue
-            # Name from second column link
-            name_tag = cols[1].select_one('a.epinfo')
-            name = utils.clean_name(name_tag.get_text()) if name_tag else ''
-            if not name:
-                continue
-            # Magnet link from third column
-            magnet_tag = cols[2].select_one('a.magnet, a[href^="magnet:"]')
-            if not magnet_tag:
-                continue
-            magnet = magnet_tag.get('href', '')
-            if not magnet.startswith('magnet:'):
-                continue
-            # Size from fourth column
-            size_text = cols[3].get_text(strip=True) if len(cols) > 3 else ''
-            # Seeders from fifth column
-            seeders = utils.parse_seeders(cols[5].get_text()) if len(cols) > 5 else 0
-            results.append({
-                'name': name,
-                'size': size_text or 'N/A',
-                'size_gb': utils.parse_size(size_text),
-                'seeders': seeders,
-                'magnet': magnet,
-                'provider': self.name,
-            })
+        # Scan up to 3 pages of recent torrents and filter by the query.
+        for page in range(1, 4):
+            url = f'{self.base_url}/api/get-torrents?limit=100&page={page}'
+            data = client.get_json(url)
+            if not data:
+                break
+            torrents = data.get('torrents', [])
+            if not torrents:
+                break
+            for t in torrents:
+                title = t.get('title', '') or t.get('filename', '')
+                if q not in title.lower():
+                    continue
+                info_hash = t.get('hash', '')
+                magnet = t.get('magnet_url', '')
+                if not magnet and info_hash:
+                    magnet = self._make_magnet(info_hash, title)
+                if not magnet:
+                    continue
+                size_bytes = t.get('size_bytes', 0) or 0
+                try:
+                    size_gb = round(int(size_bytes) / (1024 ** 3), 2)
+                except (ValueError, TypeError):
+                    size_gb = 0.0
+                results.append({
+                    'name': utils.clean_name(title),
+                    'size': utils.format_size(size_gb),
+                    'size_gb': size_gb,
+                    'seeders': t.get('seeds', 0) or 0,
+                    'magnet': magnet,
+                    'provider': self.name,
+                })
+                if len(results) >= MAX_RESULTS_PER_PROVIDER:
+                    return results
         return results

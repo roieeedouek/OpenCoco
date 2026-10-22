@@ -1,0 +1,22 @@
+services:
+  web:
+    image: python:3.9-slim
+    working_dir: /app
+    env_file:
+      - /run/base44/app.env
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - BASE44_PREVIEW_MODE
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    command: ["sh", "-ec", "pip install --no-cache-dir -r requirements.txt && exec python app.py"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/', timeout=5).read()"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    restart: on-failure

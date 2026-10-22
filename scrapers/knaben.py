@@ -13,7 +13,7 @@ class Source(BaseScraper):
         url = f'{self.base_url}/search/index.php?q={quote(query)}&search=fast'
         soup = client.get_soup(url)
         if not soup:
-            return []
+            raise RuntimeError('Site unreachable')
         results = []
         for row in soup.select('table tr, div.result'):
             # Try to find magnet link
